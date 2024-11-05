@@ -1,45 +1,89 @@
 pipeline {
     agent any
+    
     environment {
-        DOCKER_IMAGE_NAME = 'vue-project-vue-app-1'  // You can change this to the name you want
+        // Define environment variables if needed
+        NODE_HOME = tool name: 'NodeJS', type: 'NodeJS'
+        PATH = "${NODE_HOME}/bin:${env.PATH}"
     }
+
     stages {
         stage('Checkout') {
             steps {
+                // Checkout the code from the repository
                 checkout scm
             }
         }
+
+        stage('Install Dependencies') {
+            steps {
+                // Install project dependencies
+                script {
+                    // Run npm install (you could also use yarn if that's your preference)
+                    sh 'npm install'
+                }
+            }
+        }
+
+        stage('Lint') {
+            steps {
+                // Run ESLint for code quality checks
+                script {
+                    // Run ESLint to check for issues and automatically fix them
+                    sh 'npm run lint'
+                }
+            }
+        }
+
+        stage('Format Check') {
+            steps {
+                // Check code formatting with Prettier
+                script {
+                    sh 'npm run format-check'
+                }
+            }
+        }
+
         stage('Build') {
             steps {
+                // Run the build process using Vite
                 script {
-                    // Build Docker image using docker-compose
-                    sh 'docker-compose build'
+                    sh 'npm run build'
                 }
             }
         }
-        stage('Run Tests') {
+
+        stage('Test') {
             steps {
+                // Run unit tests (if applicable)
+                // You can add this stage if you have tests set up in your project
                 script {
-                    // Run tests inside the container (ensure the test script is available in your package.json)
-                    sh 'docker-compose run vue-app npm run test'
+                    sh 'npm test'  // Replace with your actual test command
                 }
             }
         }
+
         stage('Deploy') {
+            when {
+                branch 'main'  // Ensure deployment only happens on the main branch
+            }
             steps {
+                // Add your deployment steps here (e.g., to AWS, Firebase, Netlify, etc.)
                 script {
-                    // Deploy the application with docker-compose in detached mode
-                    sh 'docker-compose up -d'
+                    echo "Deploying application..."
+                    // For example, deploying to Firebase (replace with actual command)
+                    // sh 'firebase deploy'
                 }
             }
         }
     }
+
     post {
         success {
-            echo 'Build and deployment succeeded!'
+            echo 'Pipeline executed successfully!'
         }
         failure {
-            echo 'Build or deployment failed.'
+            echo 'Pipeline failed. Please check the logs.'
         }
     }
 }
